@@ -1,0 +1,148 @@
+//Amal Mohamed
+//p2.cpp
+//This program prints a linked list of intergers with the deltetion of
+//the smallest value,largest value and a random value of the list.
+
+#include <iostream>
+#include<fstream>
+#include <ctime>
+#include<cstdlib>
+#include<iomanip>
+using namespace std;
+
+//Creating an ordered linked list
+ struct Node{
+
+    int data;
+    Node* next;
+ };
+
+
+void printList(Node* list, ostream& outs);
+//Prints data values to outs.
+//Pre Condition:none
+//Post Condition:none
+
+bool insertNode(Node*& list, int d);
+//Inserts the nodes in nondescending order by data.
+//Pre condition:On the first call,list is nullptr.
+//Post Condition:List is updated to contain integer d.
+
+void deleteNode (Node*& list, int d);
+//Deleting a node that contains d from the list.
+//Pre Condition:None
+//Post Condition: List is updated.
+
+
+int main(){
+const string OUTFILE1="P2OutputA.txt";
+const string OUTFILE2="P2OutputB.txt";
+const int MAX=60;
+const int MAXRAND = 100;
+ofstream outfile;
+srand(time(0));
+int input = 0;
+Node* head= nullptr;
+Node* tmp;
+int count = 0;
+int removeRand = 0;
+cout<< endl << endl;
+cout << "Welcome ! This progam will create " << MAX
+       << " values and insert them into the list. " << endl;
+
+for (int i =0; i<MAX;i++){
+    input= rand()% MAXRAND;
+    insertNode(head,input);
+  }
+
+ printList(head,cout);
+ outfile.open(OUTFILE1);
+ printList(head,outfile);
+ outfile.close();
+
+
+ //Deleting the smallest value of the linked list
+ cout <<endl;
+ cout << "Deleting the smallest value" << endl;
+ deleteNode(head,head->data);
+
+ //Deleting the largest value of the linked list
+ cout << "Deleting the largest value" << endl;
+ tmp=head;
+ while(count<removeRand)
+    {
+      tmp= tmp->next;
+      count++;
+    }
+
+  deleteNode(head,tmp->data);
+  printList(head,cout);
+  outfile.open(OUTFILE2);
+  printList(head,outfile);
+  outfile.close();
+  cout << endl << endl;
+  cout<<"Goodbye thank you for looking at my linked list."<< endl;
+  return 0;
+}
+
+
+void printList(Node* list,ostream& outs)
+
+{
+  Node* temp=list;
+  const int MAX_COL=10;
+  const int COL_SIZE=4;
+  int count =0;
+  while(temp!= nullptr)
+    {
+      outs << setw(COL_SIZE) << temp->data;
+      count++;
+
+      temp=temp->next;
+      if(count>0&& count%MAX_COL==0)
+        outs << endl;
+    }
+  }
+
+
+
+ bool insertNode ( Node*& list, int d)
+ {
+   Node* temp= new Node;
+   Node* tPtr;
+   if (temp==nullptr)
+     return false;
+   temp->data=d;
+   if(list==nullptr||list->data > d){
+       temp->next= list;
+       list=temp;
+   }
+
+   else{
+     tPtr=list;
+     while(tPtr->next!=nullptr && tPtr->next->data <d){
+        tPtr= tPtr->next;
+     }
+
+     temp->next = tPtr->next;
+     tPtr->next = temp;
+
+     }
+   return true;
+
+ }
+
+
+void deleteNode(Node*& list,int d)
+{
+  Node* delPtr;
+  Node*tPtr;
+
+  //Deleting the head
+  if(list != nullptr && list->data == d){
+    delPtr=list;
+    list=list->next;
+    delete delPtr;
+    }
+  }
+}
