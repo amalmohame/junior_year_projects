@@ -34,7 +34,8 @@ void deleteNode (Node*& list, int d);
 //Post Condition: List is updated.
 
 
-int main(){
+int main()
+{
 const string OUTFILE1="P2OutputA.txt";
 const string OUTFILE2="P2OutputB.txt";
 const int MAX=60;
@@ -49,7 +50,6 @@ int removeRand = 0;
 cout<< endl << endl;
 cout << "Welcome ! This progam will create " << MAX
        << " values and insert them into the list. " << endl;
-
 for (int i =0; i<MAX;i++){
     input= rand()% MAXRAND;
     insertNode(head,input);
@@ -59,14 +59,10 @@ for (int i =0; i<MAX;i++){
  outfile.open(OUTFILE1);
  printList(head,outfile);
  outfile.close();
-
-
- //Deleting the smallest value of the linked list
  cout <<endl;
  cout << "Deleting the smallest value" << endl;
  deleteNode(head,head->data);
 
- //Deleting the largest value of the linked list
  cout << "Deleting the largest value" << endl;
  tmp=head;
  while(count<removeRand)
@@ -74,7 +70,6 @@ for (int i =0; i<MAX;i++){
       tmp= tmp->next;
       count++;
     }
-
   deleteNode(head,tmp->data);
   printList(head,cout);
   outfile.open(OUTFILE2);
@@ -105,8 +100,7 @@ void printList(Node* list,ostream& outs)
   }
 
 
-
- bool insertNode ( Node*& list, int d)
+bool insertNode ( Node*& list, int d)
  {
    Node* temp= new Node;
    Node* tPtr;
