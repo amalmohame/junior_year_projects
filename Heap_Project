@@ -1,0 +1,258 @@
+/Amal Mohamed
+//This class inserts random numbers,removes random numbers 
+//and flushes all instances of a number that the user enters.
+
+//Heap.h
+//This file is where I create my heap class .
+
+#ifndef HEAP_H
+#define  HEAP_H
+
+class Heap{
+  public:
+  Heap();
+  //constructor
+  //Pre Condition:none
+  //Post Condition:none
+
+  Heap& operator= (const Heap &rhs);
+  //overloaded assignment
+  //Pre Conditon:none
+  //Post Condition:none
+
+  ~Heap();
+  //destructor
+  //Pre Conditon:none
+  
+  bool insert (int value);
+  //This function inserts values into a minHeap
+  //Pre Condition:None
+  //Post Condition:None
+
+  int remove (int& value);
+  //This function removes values from the minHeap.
+  //Pre Condition: The heap is empty.
+  //Post Condition:None
+
+  bool isEmpty();
+  //This function checks to see if the minHeap is empty
+  //Pre Condition:none
+  //Post Condition:none
+  
+   void printHeap();
+  //The fuction prints out the elements in the heap.
+  //Pre Condition:none
+  //Post Conditon:none
+
+  void flush(int value);
+  //This function flushes all the instances of any value the user inputs.
+  //Pre Condition:The Heap is empty
+  //Post Conditon:none
+  
+  private:
+  int*heapArr;
+  int max;
+  int curSize;
+  int hole;
+  int curElements;
+  int numElements;
+  void percolateDown(int hole);
+  //This function percolates down the heap
+   //Pre Conditon:none
+  //Post Conditon:none
+  bool resize();
+  //This function resizes the heap when its reach its Max size.
+  //Pre Condition:none
+  //Post Conditon:none
+  bool isEmpty(int heapArr);
+  //This function checks to see if the heap is empty.
+  //Pre Condiiton:none
+  //Post Condition:none
+};
+#endif
+
+/Amal Mohamed
+//Heap.cpp
+//This file contains both my public and private functions.
+#include<iostream>
+#include "heap.h"
+#include <cstdlib>
+
+using namespace std;
+
+Heap::Heap()
+{
+  max = 10;
+  curSize = 0;
+  heapArr = new int[max];
+  curElements=0;
+  numElements=0;
+}
+
+Heap::~Heap(){
+delete[] heapArr;
+}
+
+
+Heap::Heap(const Heap& h)
+{
+  curSize = h.curSize;
+  for(int i = 1; i < curSize; i++){
+    this->insert(h.heapArr[i]);
+  }
+}
+Heap& Heap:: operator=(const Heap& rhs){
+
+  delete [] heapArr;
+  this->curSize=rhs.curSize;
+  heapArr=new int[curSize];
+  int value;
+  for(int i=1;i<curSize; i++){
+    value = rhs.heapArr[i];
+    cout << rhs.heapArr[i] << endl;
+    this->insert(value);
+
+      }
+
+  return *this;
+}
+
+
+bool Heap::  insert (int value){
+  if (curSize == max){
+    if(!resize())
+      return false;
+  }
+  int hole= curSize++;
+  while(hole>1 && value < heapArr[hole/2]){
+    heapArr[hole]=heapArr[hole/2];
+    hole=hole/2;
+  }
+  heapArr[hole]=value;
+  return true;
+}
+void Heap:: percolateDown(int hole){
+  int temp=heapArr[hole];
+  while((hole*2 <= curSize && heapArr[hole*2]<temp)
+    ||(hole*2+1 <= curSize && heapArr[hole*2+1]<temp))
+    {
+      if(hole*2+1<= curSize && heapArr[hole*2+1]< heapArr[hole*2]){
+        heapArr[hole]=heapArr[hole*2+1];
+        {
+            hole=hole*2+1;
+      }
+      }
+  else
+        {
+          heapArr[hole]=heapArr[hole*2];
+          hole=hole*2;
+        }
+      heapArr[hole]=temp;
+}
+}
+
+int Heap:: remove(int& value){
+  int temp=heapArr[value];
+  heapArr[value]=value;
+  curSize--;
+  percolateDown(1);
+  return temp;
+
+}
+
+bool Heap:: isEmpty(){
+  return curSize == 0;
+}
+
+void Heap:: flush(int value){
+  int curElements= numElements;
+  for(int i=1;i<curElements;i++){
+    if(heapArr[i]==value){
+      remove(i);
+  }
+
+  }
+
+}
+
+bool Heap:: resize(){
+  int*tempArr= new int[max*2];
+  for(int i=0;i<curSize;i++){
+     tempArr[i]=heapArr[i];
+  }
+  max=max*2;
+  delete []heapArr;
+  heapArr=tempArr;
+  return true;
+}
+
+void Heap :: printHeap()
+{
+  for(int i=1; i<curSize;i++)
+      {
+      cout<< heapArr[i]<<" ";
+    }
+  cout<<endl;
+
+}
+
+//Amal Mohamed
+//p4.cpp
+//This file is the driver of my project.
+#include <iostream>
+#include "heap.h"
+#include <cstdlib>
+#include <ctime>
+#include <iomanip>
+
+using namespace std;
+
+int main(){
+
+  const int MAXNUM=100;
+  const int MAXCOLS=10;
+  const int COLSIZE=4;
+  int count=15;
+  int removeCount=5;
+
+  cout<<" Welcome to my driver "<<endl ;
+  cout<<" This is my minHeap "<<endl;
+  Heap *h1= new Heap();
+
+  int value;
+  srand(time(0));
+  for(int i =0;i<count;i++){
+    cout<<i<<endl;
+    value=rand() % MAXNUM;
+    if (!h1->insert(value))
+      cout<<"couldn insert" <<value<<endl;
+
+    cout<<" The random values that are inserted into my heap : "<<endl;
+      h1->printHeap();
+      if(i%MAXCOLS==0)
+        cout<<endl;
+  }
+
+  cout<<"Removing the following items: " << endl ;
+   for(int i=0; i<removeCount; i++)
+    {
+    value= rand()%MAXNUM;
+   h1->isEmpty();
+    value=h1->remove(i);
+    cout<< setw(COLSIZE)<<value;
+
+    }
+  int userInput;
+  cout<<endl;
+  cout<<"Please enter a value";
+  cin>>userInput;
+  h1->flush(userInput);
+  h1->printHeap();
+
+  cout<<"Goodbye ,thank you for testing my minHeap.";
+}
+
+
+
+
+
