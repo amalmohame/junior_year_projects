@@ -1,7 +1,7 @@
 //Amal Mohamed
 //p5.cpp
-//This program uses a hash function find words in a linked list that have been pre processed
-// and prints the word count 
+//This program uses a hash function to find words in a an e book ,titled "ulyss.txt" that have been pre processed
+//and prints the unique word count,load factor,collisons and the word count.
 
 #include <fstream>
 #include <iostream>
@@ -57,12 +57,9 @@ int main()
  cin.get();
  return -1;
  }
- string userInput;
- cout<< "Please enter a word";
- cin>> userInput;
  string word;
  int wordCount=0;
-  while(file>>word){
+ while(file>>word){
    wordCount++;
 
  }
