@@ -1,0 +1,132 @@
+//This program prints the first ten lines and the last ten lines of the 2010 U.S Census Count 
+//using the Merge Sort Algorithm.
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <iomanip>
+using namespace std;
+
+//initializing my constants
+const int MAX = 3200;
+const int PRINT_MAX = 10;
+const int COL = 8;
+const int WIDTH = 10;
+const string INPUTFILE = "/home/fac/sreeder/class/cs2430/countyPop.dat";
+
+struct Population
+{
+  int censusCount;
+  string place;
+};
+
+//This function merges the elements after everything is sorted.
+void merge(Population set[], Population temp[],
+           int leftPos,int rightPos,int rightEnd);
+
+//This function sorts elements by dividing the array in half until the array size is one.
+void mergeSort(Population set[], Population temp[],int first, int last);
+
+//This function prints the elements after they have been sorted and merged.
+void printBegEnd(const Population set[], int numRecords);
+
+//main function
+int main(){
+ifstream inputFile;
+int count=0;
+Population list[MAX];
+Population tempList[MAX];
+inputFile.open(INPUTFILE);
+if(inputFile.fail()){
+  cout<< "File failure..exiting...";
+  cin.get();
+ }
+
+ while(inputFile >> list[count].censusCount){
+    getline(inputFile,list[count].place);
+    count++;
+  }
+//Printing the first ten lines of the list.
+printBegEnd(list,count);
+//Sorting my elements using mergeSort.
+mergeSort(list,tempList,0,count-1);
+//Printing the last ten lines of list.
+printBegEnd(list,count);
+return 0;
+ }
+
+//My mergeSort Function
+void mergeSort(Population set[],Population temp[],int first,int last)
+{
+  int center;
+  if(first<last){
+    center=(first+last)/2;
+    mergeSort(set,temp,first,center);
+    mergeSort(set,temp,center+1 ,last);
+    merge(set,temp,first,center+1,last);
+  }
+}
+
+//My merge Function
+void merge(Population set[], Population temp[],
+           int left ,int right,int rightEnd)
+{
+  int leftEnd= right-1;
+  int t =left;
+  int numElements=rightEnd -left+1;
+  while(left<= leftEnd&&(right<= rightEnd)){
+    if(set[left].censusCount <= set[right].censusCount){
+      temp[t].censusCount = set[left].censusCount;
+      temp[t].place= set[left].place;
+      t++;
+      left++;
+    }
+else{
+      temp[t].censusCount=set[right].censusCount;
+      temp[t].place=set[right].place;
+      t++;
+      right++;
+    }
+  }
+
+
+  //Merging the elements of the left half
+  while(left<=leftEnd){
+    temp[t].censusCount=set[left].censusCount;
+    temp[t].place=set[left].place;
+    t++;
+    left++;
+  }
+
+  //Merging the elements of the right half
+  while(right <=rightEnd){
+        temp[t].censusCount=set[right].censusCount;
+        temp[t].place=set[right].place;
+t++;
+        right++;
+  }
+
+  //Copying the merged elements of the temp array in to the original array.
+  int lastIndex=rightEnd;
+  for(int i =0; i<numElements;i++){
+    set[lastIndex].censusCount=temp[lastIndex].censusCount;
+    set[lastIndex].place=temp[lastIndex].place;
+    lastIndex--;
+  }
+}
+//My printBegEnd function
+void printBegEnd( const Population set[],int numRecords){
+for(int i=0; i<PRINT_MAX ; i++){
+       string countyName= set[i].place;
+       int countyPopul= set[i].censusCount;
+       cout<< countyPopul << setw(WIDTH)<< countyName<<endl;
+ cout<<endl<<endl;
+ for(int i= numRecords-PRINT_MAX; i<numRecords;i++){
+     string countyName = set[i].place;
+     int countyPopul =set[i].censusCount;
+     cout << countyPopul << setw(WIDTH) << countyName << endl;
+   }
+
+   cout<<endl;
+}
+
