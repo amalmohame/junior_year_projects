@@ -1,5 +1,6 @@
 //This program prints the first ten lines and the last ten lines of the 2010 U.S Census Count 
 //using the Merge Sort Algorithm.
+
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -21,12 +22,9 @@ struct Population
 };
 
 //This function merges the elements after everything is sorted.
-void merge(Population set[], Population temp[],
-           int leftPos,int rightPos,int rightEnd);
-
+void merge(Population set[], Population temp[],int leftPos,int rightPos,int rightEnd);
 //This function sorts elements by dividing the array in half until the array size is one.
 void mergeSort(Population set[], Population temp[],int first, int last);
-
 //This function prints the elements after they have been sorted and merged.
 void printBegEnd(const Population set[], int numRecords);
 
@@ -88,25 +86,18 @@ else{
       right++;
     }
   }
-
-
-  //Merging the elements of the left half
   while(left<=leftEnd){
     temp[t].censusCount=set[left].censusCount;
     temp[t].place=set[left].place;
     t++;
     left++;
   }
-
-  //Merging the elements of the right half
   while(right <=rightEnd){
         temp[t].censusCount=set[right].censusCount;
         temp[t].place=set[right].place;
-t++;
+        t++;
         right++;
   }
-
-  //Copying the merged elements of the temp array in to the original array.
   int lastIndex=rightEnd;
   for(int i =0; i<numElements;i++){
     set[lastIndex].censusCount=temp[lastIndex].censusCount;
@@ -114,6 +105,7 @@ t++;
     lastIndex--;
   }
 }
+
 //My printBegEnd function
 void printBegEnd( const Population set[],int numRecords){
 for(int i=0; i<PRINT_MAX ; i++){
