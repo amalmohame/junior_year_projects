@@ -1,142 +1,124 @@
-//Amal Mohamed
-//p2.cpp
-//This program prints a linked list of intergers with the deltetion of
-//the smallest value,largest value and a random value of the list.
+-- 1. Use your Database
+USE mk_st19
 
-#include <iostream>
-#include<fstream>
-#include <ctime>
-#include<cstdlib>
-#include<iomanip>
-using namespace std;
+-- 2. Drop Tables
+DROP TABLE IF EXISTS MODEL
+DROP TABLE IF EXISTS BRAND
+DROP TABLE IF EXISTS MANUFACTURER
+DROP TABLE IF EXISTS BRAND_LEVEL
 
-//Creating an ordered linked list
- struct Node{
-
-    int data;
-    Node* next;
- };
+-- 3. Create Table BRANDLEVEL
+CREATE TABLE BRAND_LEVEL(
+BRAND_LEVEL_ID INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
+BRAND_LEVEL_TITLE VARCHAR(25)
+)
 
 
-void printList(Node* list, ostream& outs);
-//Prints data values to outs.
-//Pre Condition:none
-//Post Condition:none
-
-bool insertNode(Node*& list, int d);
-//Inserts the nodes in nondescending order by data.
-//Pre condition:On the first call,list is nullptr.
-//Post Condition:List is updated to contain integer d.
-
-void deleteNode (Node*& list, int d);
-//Deleting a node that contains d from the list.
-//Pre Condition:None
-//Post Condition: List is updated.
+-- 4. Create Table MANUFACTURER
+CREATE TABLE MANUFACTURER(
+MANUFACTURER_ID INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
+MANUFACTURER_NAME VARCHAR(25),
+MANUFACTURER_PHONE VARCHAR(25),
+MANUFACTURER_ACCOUNT VARCHAR(25)
+)
 
 
-int main()
-{
-const string OUTFILE1="P2OutputA.txt";
-const string OUTFILE2="P2OutputB.txt";
-const int MAX=60;
-const int MAXRAND = 100;
-ofstream outfile;
-srand(time(0));
-int input = 0;
-Node* head= nullptr;
-Node* tmp;
-int count = 0;
-int removeRand = 0;
-cout<< endl << endl;
-cout << "Welcome ! This progam will create " << MAX
-       << " values and insert them into the list. " << endl;
-for (int i =0; i<MAX;i++){
-    input= rand()% MAXRAND;
-    insertNode(head,input);
-  }
+-- 5. Create Table BRAND
+CREATE TABLE BRAND(
+BRAND_ID INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
+MANUFACTURER_ID INT FOREIGN KEY REFERENCES MANUFACTURER(MANUFACTURER_ID),
+BRAND_LEVEL_ID INT FOREIGN KEY REFERENCES BRAND_LEVEL(BRAND_LEVEL_ID),
+BRAND_NAME VARCHAR(25)
+ )
 
- printList(head,cout);
- outfile.open(OUTFILE1);
- printList(head,outfile);
- outfile.close();
- cout <<endl;
- cout << "Deleting the smallest value" << endl;
- deleteNode(head,head->data);
+-- 6. Create Table MODEL
+CREATE TABLE MODEL(
+MODEL_ID INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
+BRAND_ID INT FOREIGN KEY REFERENCES BRAND(BRAND_ID),
+MODEL_NAME VARCHAR(25),
+MODEL_NUM_JETS VARCHAR(25),
+MODEL_NUM_MOTORS VARCHAR(25),
+MODEL_PRICE VARCHAR(25)
 
- cout << "Deleting the largest value" << endl;
- tmp=head;
- while(count<removeRand)
-    {
-      tmp= tmp->next;
-      count++;
-    }
-  deleteNode(head,tmp->data);
-  printList(head,cout);
-  outfile.open(OUTFILE2);
-  printList(head,outfile);
-  outfile.close();
-  cout << endl << endl;
-  cout<<"Goodbye thank you for looking at my linked list."<< endl;
-  return 0;
-}
+)
 
 
-void printList(Node* list,ostream& outs)
 
-{
-  Node* temp=list;
-  const int MAX_COL=10;
-  const int COL_SIZE=4;
-  int count =0;
-  while(temp!= nullptr)
-    {
-      outs << setw(COL_SIZE) << temp->data;
-      count++;
+-- 7. Insert Data into table BRANDLEVEL
+--Premium, Mid-level, Entry-level
+INSERT INTO BRAND_LEVEL(BRAND_LEVEL_TITLE)
+VALUES('Premium'),
+	  ('Mid-level'),
+	  ('Entry-level')
 
-      temp=temp->next;
-      if(count>0&& count%MAX_COL==0)
-        outs << endl;
-    }
-  }
+ 
 
+-- 8. Insert Data into table MANUFACTURER
+--Acme Spa, 425-555-1212, 8745
+--Spas R Us, 425-555-4545, 9873
+--Washington Spa, 425-555-9999, 4532
+INSERT INTO MANUFACTURER(MANUFACTURER_NAME,MANUFACTURER_PHONE,MANUFACTURER_ACCOUNT)
+VALUES('Acme Spa', 425-555-1212, 8745),
+	('Spas R Us', 425-555-4545, 9873),
+	('Washington Spa',425-555-9999, 4532)
 
-bool insertNode ( Node*& list, int d)
- {
-   Node* temp= new Node;
-   Node* tPtr;
-   if (temp==nullptr)
-     return false;
-   temp->data=d;
-   if(list==nullptr||list->data > d){
-       temp->next= list;
-       list=temp;
-   }
-
-   else{
-     tPtr=list;
-     while(tPtr->next!=nullptr && tPtr->next->data <d){
-        tPtr= tPtr->next;
-     }
-
-     temp->next = tPtr->next;
-     tPtr->next = temp;
-
-     }
-   return true;
-
- }
+-- 9. Insert Data into table BRAND
+--Cascade by Acme Spa is a Premium brand
+--Olympic by Acme Spa is a Mid-Level brand
+--Century by Spas R Us is a Mid-Level brand
+--Heritage by Spas R Us is an Entry-Level brand
+--Bellevue by Washington Spa is a Mid-Level brand
+--Redmond by Washington Spa is an Entry Level brand
+--Medina by Washington Spa is a Premium brand
+INSERT INTO BRAND(MANUFACTURER_ID, BRAND_LEVEL_ID, BRAND_NAME)
+VALUES(1,1,'Cascade'),
+	  (1,2,'Olympic'),
+	  (2,2,'Century'),
+	  (2,3,'Heritage'),
+	  (3,2,'Bellevue'),
+	  (3,3,'Redmond'),
+	  (3,1,'Medina')
 
 
-void deleteNode(Node*& list,int d)
-{
-  Node* delPtr;
-  Node*tPtr;
 
-  //Deleting the head
-  if(list != nullptr && list->data == d){
-    delPtr=list;
-    list=list->next;
-    delete delPtr;
-    }
-  }
-}
+-- 10. Insert Data into table MODEL
+--Cascade Rabbit is $1500, has 4 motors, and 4 jets
+--Cascade Racoon is $1000, has 2 motors, and 2 jets
+--Olympic Yellow is $1000, has 3 motors and 3 jets
+--Olympic Red is $900, has 1 motor and 3 jets
+--Century Apple is $1000 and has 4 motors and 4 jets
+--Century Pear is $890 and has 2 motors and 2 jets
+--Heritage Single is $300 and has 1 motor and 1 jet
+--Heritage Double is $400 and has 2 motor and 2 jet2
+--Bellevue Factoria is $600 and has 2 motors and 2 jets
+--Redmond Downtown is $400 and has 1 motor and 1 jet
+--Medina View is $2000 and has 5 motors and 5 jets
+INSERT INTO MODEL(BRAND_ID,MODEL_NAME,MODEL_NUM_JETS,MODEL_NUM_MOTORS,MODEL_PRICE)
+VALUES(1,'Rabbit', 4 , 4, '1500'),
+	  (1,'Racoon', 2, 2, '1000'),
+	  (2,'Yellow', 3, 3, '1000'),
+	  (2,'Red', 3, 1, '900'),
+	  (3,'Apple', 4, 4, '1000'),
+	  (3,'Pear', 2, 2, '890'),
+	  (4,'Single', 1, 1, '300'),
+	  (4,'Double', 2, 2, '400'),
+	  (5,'Factoria', 2, 2, '600'),
+	  (6,'Downtown', 1, 1, '400'),
+	  (6,'View', 5, 5, '2000')
+
+
+-- 11. Select Current Data from each table (list each attribute) MANUFACTURER
+SELECT MANUFACTURER_ID, MANUFACTURER_NAME, MANUFACTURER_PHONE, MANUFACTURER_ACCOUNT FROM MANUFACTURER
+
+-- 12. Select Current Data from each table (list each attribute)MODEL
+SELECT MODEL_ID, BRAND_ID, MODEL_NAME, MODEL_NUM_JETS, MODEL_NUM_MOTORS, MODEL_PRICE FROM MODEL
+
+-- 13. Select Current Data from each table (list each attribute)BRAND
+SELECT BRAND_ID, MANUFACTURER_ID, BRAND_LEVEL_ID, BRAND_NAME FROM BRAND
+
+-- 15. Select Current Data from each table (list each attribute) BRANDLEVEL
+SELECT BRAND_LEVEL_ID, BRAND_LEVEL_TITLE FROM BRAND_LEVEL
+
+-- 15. Select the Manufacture Name, Brand Name, Model Name, Brand Level Name, Model Price for all Models
+SELECT MANUFACTURER_NAME ,BRAND_NAME,MODEL_NAME, BRAND_LEVEL_TITLE,MODEL_PRICE FROM MODEL INNER JOIN BRAND ON BRAND.BRAND_ID = MODEL.BRAND_ID INNER JOIN MANUFACTURER ON MANUFACTURER.MANUFACTURER_ID
+ = BRAND.MANUFACTURER_ID INNER JOIN BRAND_LEVEL ON BRAND_LEVEL.BRAND_LEVEL_ID = BRAND.BRAND_LEVEL_ID
