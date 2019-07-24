@@ -1,3 +1,777 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ConsoleApp1;
+
+
+/*
+ * This is a Very Simple program that lets you pull data from the database
+ * It is pre-configured to use mk_koenig database
+ * 
+ * The program is a command line application
+ * 
+ * Running will open a command line window
+ * 
+ * Follow the menu prompts to interact with the program
+ * 
+ * You can place break points to investigation more about it
+ * 
+ * If you look carefully thorugh the options you will see I implemented one of each type for you to model from.
+ * The lab will use a View, SP, Entity Framework, and direct SQL call so you can see how all work.  
+ * 
+ */
+
+
+
+
+namespace ConsoleApp1
+{
+    public class Airlines
+    {
+        FlightDatabase Db { get; set; }
+
+        public Airlines()
+        {
+            Db = new FlightDatabase();
+        }
+
+        #region MenuLogic
+        public void Menu_Passenger()
+        {
+            //            using (db)
+            {
+                int choice = 0;
+                do
+                {
+                    Console.Clear();
+                    DisplayMenu_Passenger();
+                    choice = GetInputKey();
+                    switch (choice)
+                    {
+                        case 1:
+                            Console.WriteLine("\t\t Show Passengers in System");
+
+                            // Show all the passengers
+
+                            var dataIndex = Db.VIEW_PASSENGER.ToList();       // This coverts the returned data to a List, that then for foreach can iterate on below.
+
+                            Console.WriteLine("PASSENGER_ID\t" + "PASSENGER_NAME");
+
+                            // Because the objects are data objects, the '.' notation can access the fields.
+                            foreach (var item in dataIndex)
+                            {
+                                Console.WriteLine(item.PASSENGER_ID + "\t\t" + item.PASSENGER_NAME);
+                            }
+
+                            HitAnyKey();
+
+                            break;
+
+                        case 2:
+
+                            /*
+                             * Example of how to Add a record using the data structures.
+                             * Get the Input
+                             * Create the Data Structure Instance
+                             * The Add to the Data Structure.  Here it is adding to Passenger Table (I gave permissions to do so)
+                             * The remember to tell it to Save the changes.
+                             */
+
+                            Console.WriteLine("\t\t Add Passenger to System");
+
+                            Console.WriteLine("\nType Passenger Name and hit Enter");
+
+                            var passenger = GetInputString();
+                            if (!string.IsNullOrEmpty(passenger))
+                            {
+                                var data = new PASSENGER
+                                {
+                                    PASSENGER_NAME = passenger
+                                };
+
+                                Db.PASSENGERs.Add(data);
+                                Db.SaveChanges();
+                            }
+
+                            Console.WriteLine("\nPassenger " + passenger + " Added to the System");
+
+                            HitAnyKey();
+
+                            break;
+
+                        case 3:
+                            Console.WriteLine("\t\t Delete Passenger From System");
+
+                            HitAnyKey();
+
+                            break;
+                        default:
+                            break;
+                    }
+                } while (choice != 4);
+            }
+        }
+        public void Menu_Destination()
+        {
+            //using (var db = new FlightDatabase())
+            {
+
+                int choice = 0;
+                do
+                {
+                    Console.Clear();
+                    DisplayMenu_Destination();
+                    choice = GetInputKey();
+                    switch (choice)
+                    {
+                        case 1:
+                            Console.WriteLine("\t\t Show Destinations in System");
+
+                            
+
+                            
+                            var data = Db.DESTINATIONs.SqlQuery("SELECT DESTINATION_ID, DESTINATION_CODE FROM DESTINATION").ToList<DESTINATION>();
+
+                            Console.WriteLine("DESTINATION_ID\t" + "DESTINATION_CODE");
+
+                            // Because the objects are data objects, the '.' notation can access the fields.
+                            foreach (var item in data)
+                            {
+                                Console.WriteLine(item.DESTINATION_ID + "\t\t" + item.DESTINATION_CODE);
+                            }
+
+                            HitAnyKey();
+
+                            break;
+                        case 2:
+
+
+                            // TODO: 3
+                            // Refer to Add Passenger for hints     
+                            Console.WriteLine("\t\t Add Destination to System");
+
+                            Console.WriteLine("\nType Destination Code and hit Enter");
+
+                            var destination = GetInputString();
+                            if (!string.IsNullOrEmpty(destination))
+                            {
+                                //var dest_data = new DESTINATION
+                                DESTINATION new_destination = new DESTINATION
+                                {
+                                    DESTINATION_CODE = destination
+                                };
+
+                                Db.DESTINATIONs.Add(new_destination);
+                                Db.SaveChanges();
+                            }
+
+                            Console.WriteLine("\nDestination " + destination + " Added to the System");
+
+                            HitAnyKey();
+
+                            break;
+
+
+                        case 3:
+                            Console.WriteLine("\t\t Delete Destinations from System");
+
+                            HitAnyKey();
+
+                            break;
+                        default:
+                            break;
+                    }
+                } while (choice != 4);
+            }
+        }
+        public void Menu_Seat()
+        {
+            //using (var db = new FlightDatabase())
+            {
+                int choice = 0;
+                do
+                {
+                    Console.Clear();
+                    DisplayMenu_Seat();
+                    choice = GetInputKey();
+                    switch (choice)
+                    {
+                        case 1:
+                            Console.WriteLine("\t\t Show All Passengers");
+
+                            // TODO: 4
+                            // Get the flight ID
+                            // Use the SP SP_GET_PASSENGER_ON_FLIGHT pass the Flight ID
+
+                            HitAnyKey();
+
+                            break;
+
+                        case 2:
+                            Console.WriteLine("\t\t Show Passengers Lacking Seats");
+
+                            // TODO: 4
+                            // Get the flight ID
+                            // Use the SP SP_GET_PASSENGER_ON_FLIGHT pass the Flight ID
+
+                            HitAnyKey();
+
+                            break;
+                        case 3:
+                            Console.WriteLine("\t\t Assign Passenger to Seat");
+
+                            // TODO 5:
+                            // Add a Passenger to the Flight using the SP_ASSIGN_SEAT 1, pass the Fight ID, Passenger Name, Row, Column
+
+                            HitAnyKey();
+                            break;
+
+                        case 4:
+                            Console.WriteLine("\t\t Delete Seat Assignment");
+                            HitAnyKey();
+                            break;
+
+                        default:
+                            break;
+                    }
+                } while (choice != 5);
+            }
+        }
+        public void Menu_Manifest()
+        {
+            //using (var db = new FlightDatabase())
+            {
+                int choice = 0;
+                do
+                {
+                    Console.Clear();
+                    DisplayMenu_Manifest();
+                    choice = GetInputKey();
+                    switch (choice)
+                    {
+                        case 1:
+
+                            /*
+                             *   View Example
+                             * 
+                             *   Example here, how how to call the View and get the data.
+                             *   This uses the Entity framework and treats views similar to classes using LINQ
+                             */
+
+                            Console.WriteLine("\t\t\t Show Passenger List For All Flights");
+
+                            var data = Db.VIEW_MANIFEST_ALL.ToList();       // This coverts the returned data to a List, that then for foreach can iterate on below.
+
+                            Console.WriteLine("FLIGHT ID\t" + "DESTINATION\t" + "PASSENGER ID\t" + "NAME\t" + "ROW\t" + "COLUMN");
+
+                            // Because the objects are data objects, the '.' notation can access the fields.
+                            foreach (var item in data)
+                            {
+                                Console.WriteLine(item.FLIGHT_ID + "\t\t" + item.DESTINATION_CODE + "\t\t" + item.PASSENGER_ID + "\t\t" + item.PASSENGER_NAME + "\t" + item.MANIFEST_ROW + "\t" + item.MANAFEST_COLUMN);
+                            }
+
+                            HitAnyKey();
+
+                            break;
+
+                        case 2:
+                            Console.WriteLine("\t\t Add Passenger to Flight");
+
+                            /*
+                             * Entity Framework Example
+                             * 
+                             * Example of how to Add a record using the data structure and the entity framework
+                             * This treats the database objects are data objects allowing direct minuplation.
+                             * 
+                             * Get the Input
+                             * Create the Data Structure Instance
+                             * The Add to the Data Structure.  Here it is adding to Passenger Table (I gave permissions to do so)
+                             * The remember to tell it to Save the changes.
+                             * 
+                             * To help with the User Experience
+                             * The code Shows the list of current Passengers
+                             * And has the user enter a passenger ID
+                             * 
+                             * Then the code shows the list of flights
+                             * And has the user enter a flight ID
+                             * 
+                             * Then it goes to the DB and gets the record for passenger and flight
+                             * 
+                             * The new manifest gets the values entered for passenger and flight, as well as the datastruture for passenger and flight from the dataabse
+                             * this helps keep the Foreign Keys in place
+                             * 
+                             * Finally the code does a Save.
+                             * The save can pass, and the record is added to the DB
+                             * or the save can throw an exception, and an error message is displayed
+                             * 
+                             */
+
+                            // Get the Passenger List
+                            var myPassengerList = Db.PASSENGERs.ToList();
+
+                            // Output the Passenger List to the screen
+                            Console.WriteLine("\nPassenger ID\t\tName");
+                            foreach (var dataPassengerOutput in myPassengerList)
+                            {
+                                Console.WriteLine(dataPassengerOutput.PASSENGER_ID + "\t\t" + dataPassengerOutput.PASSENGER_NAME);
+                            }
+
+                            // Get the user input for Passenger
+                            Console.WriteLine("\n\nType Passenger ID and hit Enter");
+                            var passenger = GetInputInteger();
+
+                            // Find the Record for Passenger
+                            var myPassenger = myPassengerList.FirstOrDefault(c => c.PASSENGER_ID == passenger);
+                            if (myPassenger == null)
+                            {
+                                Console.WriteLine("\nError. No Passenger ID " + passenger);
+                            }
+
+
+                            // Get the Flight List
+                            var myFlightList = Db.FLIGHTs.ToList();
+
+                            // Output the flight list to the screen
+                            Console.WriteLine("\nFlight ID\t\tDestination");
+                            foreach (var dataFligthOutput in myFlightList)
+                            {
+                                Console.WriteLine(dataFligthOutput.FLIGHT_ID + "\t\t" + dataFligthOutput.DESTINATION.DESTINATION_CODE);
+                            }
+
+                            // Get the user input for Flight ID
+                            Console.WriteLine("\n\nType Flight ID and hit Enter");
+                            var flight = GetInputInteger();
+
+                            // Find the record for Flight
+                            var myFlight = myFlightList.FirstOrDefault(c => c.FLIGHT_ID == flight);
+                            if (myFlight == null)
+                            {
+                                Console.WriteLine("\nError. No Flight ID " + flight);
+                            }
+
+                            // If Fligth and Paassenger IDs are good, build a new data structure
+                            // Use the data records for the Foreign Keys
+                            if (flight > 0 && passenger > 0)
+                            {
+                                var dataPassenger = new MANIFEST();
+                                dataPassenger.PASSENGER_ID = passenger;
+                                dataPassenger.FLIGHT_ID = flight;
+                                dataPassenger.PASSENGER = myPassenger;
+                                dataPassenger.FLIGHT = myFlight;
+
+                                Db.MANIFESTs.Add(dataPassenger);
+
+                                // Try to Save, if it errors give Error message
+                                try
+                                {
+                                    Db.SaveChanges();
+                                    Console.WriteLine("\nAdded Passenger ID " + myPassenger.PASSENGER_ID + " ( " + myPassenger.PASSENGER_NAME + " to Flight " + myFlight.FLIGHT_ID + " Destination " + myFlight.DESTINATION.DESTINATION_CODE);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine("\nUnable to add Passenger ID " + passenger + " ( " + myPassenger.PASSENGER_NAME + " ) Added to Flight " + flight);
+                                }
+                            }
+
+
+                            HitAnyKey();
+
+                            break;
+
+                        case 3:
+                            Console.WriteLine("\t\t Remove Passenger From Flight");
+
+                            HitAnyKey();
+
+                            break;
+                        default:
+                            break;
+                    }
+                } while (choice != 4);
+            }
+        }
+        public void Menu_Flight()
+        {
+            //using (var db = new FlightDatabase())
+            {
+                int choice = 0;
+                do
+                {
+                    Console.Clear();
+                    DisplayMenu_Flight();
+                    choice = GetInputKey();
+                    switch (choice)
+                    {
+                        case 1:
+                            Console.WriteLine("\t\t Show All Flights");
+
+                            var data = Db.VIEW_FLIGHT_ALL.ToList();       // This coverts the returned data to a List, that then for foreach can iterate on below.
+
+                            Console.WriteLine("FLIGHT ID\t" + "DESTINATION\t" + "MODEL ID\t" + "ROW\t" + "COLUMN\t" + "DATE");
+
+                            // Because the objects are data objects, the '.' notation can access the fields.
+                            foreach (var item in data)
+                            {
+                                Console.WriteLine(item.FLIGHT_ID + "\t\t" + item.DESTINATION_CODE + "\t\t" + item.PLANE_MODEL + "\t\t" + item.PLANE_ROWS + "\t" + item.PLANE_COLUMNS + "\t" + item.FLIGHT_DATE);
+                            }
+
+                            HitAnyKey();
+
+                            break;
+                        case 2:
+                            Console.WriteLine("\t\t Add Flight to System");
+
+                            // TODO 7:
+                            // Call the SP to Add a Flight to show how calling SPs also work.
+                            Console.WriteLine("Destination Codes: ");
+                            var destinations_list = Db.VIEW_DESTINATION.ToList();
+                            foreach (var dest in destinations_list)
+                            {
+                                Console.WriteLine(dest.DESTINATION_CODE);
+                            }
+
+                            Console.WriteLine("Enter destination of flight as code: ");
+                            var user_dest = GetInputString();
+                            var myDestination = destinations_list.FirstOrDefault(c => c.DESTINATION_CODE == user_dest);
+                            if (myDestination == null)
+                            {
+                                Console.WriteLine("\nError. No Plane ID " + user_dest);
+                            }
+                            Console.WriteLine("Plane Codes: ");
+                            var plane_list = Db.VIEW_PLANE.ToList();
+                            foreach (var plane in plane_list)
+                            {
+                                Console.WriteLine(plane.PLANE_ID);
+                            }
+
+                            Console.WriteLine("Enter plane code: ");
+                            var user_plane = GetInputInteger();
+
+                            var myPlane = plane_list.FirstOrDefault(c => c.PLANE_ID == user_plane);
+                            if (myPlane == null)
+                            {
+                                Console.WriteLine("\nError. No Plane ID " + user_plane);
+                            }
+
+                            var result = Db.Database.ExecuteSqlCommand("SP_FLIGHT_ADD @user_dest, @user_plane",
+                                new System.Data.SqlClient.SqlParameter("@user_dest", user_dest),
+                                new System.Data.SqlClient.SqlParameter("@user_plane", user_plane));
+
+                            if (result > 0)
+                            {
+                                Console.WriteLine("Flight with destination " + user_dest + " and plane " + user_plane + " added.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Error, flight not added with parameters destination: " + user_dest + " plane: " + user_plane);
+                            }
+
+                            HitAnyKey();
+
+                            break;
+                        case 3:
+                            Console.WriteLine("\t\t Delete Flight from System");
+
+                            HitAnyKey();
+
+                            break;
+                        default:
+                            break;
+                    }
+                } while (choice != 4);
+            }
+        }
+        public void Menu_ResetData()
+        {
+            ////using (var db = new FlightDatabase())
+            {
+                int choice = 0;
+                do
+                {
+                    Console.Clear();
+                    DisplayMenu_ResetData();
+                    choice = GetInputKey();
+                    switch (choice)
+                    {
+                        /*
+                         * Reset data, calls the SP Reset Data, that then deletes all data, 
+                         * and restores the database to a known set of data from Mike's database
+                         * Call this to reset the data after doing add, update, or delete operations
+                         */
+                        case 1:
+                            Console.WriteLine("\t\t Reset Data");
+
+                            var result = Db.SP_DATA_RESET();
+
+                            Console.WriteLine("\nDatabase reset complete");
+
+                            HitAnyKey();
+
+                            // Exit the menu back up to the main menu
+                            return;
+                        //break;
+
+                        default:
+                            break;
+                    }
+                } while (choice != 2);
+            }
+        }
+        #endregion MenuDisplay
+        #region Backend
+        #endregion Backend
+        #region ManageInput
+        /// <summary>
+        /// Eat the input and return, so the app can pause
+        /// </summary>
+        static public void HitAnyKey()
+        {
+            Console.WriteLine("");
+            Console.WriteLine("Hit anykey to continue");
+            var choice = Console.ReadKey(true).Key;
+        }
+
+        /// <summary>
+        /// Get the number the person typed
+        /// </summary>
+        /// <returns></returns>
+        static public int GetInputKey()
+        {
+            int Value = 0;
+            ConsoleKeyInfo UserInput = Console.ReadKey(true); // Get user input
+
+            // We check input for a Digit
+            if (char.IsDigit(UserInput.KeyChar))
+            {
+                Value = int.Parse(UserInput.KeyChar.ToString()); // use Parse if it's a Digit
+            }
+
+            return Value;
+        }
+
+        /// <summary>
+        /// Get a String input
+        /// </summary>
+        /// <returns></returns>
+        static public string GetInputString()
+        {
+            var UserInput = Console.ReadLine(); // Get user input
+            return UserInput;
+        }
+
+        /// <summary>
+        /// Get an Integer input
+        /// </summary>
+        /// <returns></returns>
+        static public int GetInputInteger()
+        {
+            var UserInput = Console.ReadLine(); // Get user input
+
+            try
+            {
+                Convert.ToInt32(UserInput);
+                return Convert.ToInt32(UserInput);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        #endregion ManageInput
+        #region MenuDisplay
+        void WelcomeMessage()
+        {
+            Console.WriteLine("");
+            Console.WriteLine("Welcome to Mike Airlines");
+            Console.WriteLine("");
+        }
+
+        public void DisplayMenu_Options()
+        {
+            WelcomeMessage();
+            Console.WriteLine("Main Menu");
+            Console.WriteLine("");
+            Console.WriteLine("Please make your selection");
+            Console.WriteLine("1 - Destinations");
+            Console.WriteLine("2 - Passengers");
+            Console.WriteLine("3 - Flights");
+            Console.WriteLine("4 - Manifest");
+            Console.WriteLine("5 - Seats");
+            Console.WriteLine("6 - Reset Data");
+            Console.WriteLine("7 - Exit");
+            Console.WriteLine("");
+            Console.WriteLine("Selection: ");
+        }
+
+        public void DisplayMenu_Destination()
+        {
+            WelcomeMessage();
+
+            Console.WriteLine("Destination Menu");
+            Console.WriteLine("");
+            Console.WriteLine("Please make your selection");
+            Console.WriteLine("1 - Show Destinations");
+            Console.WriteLine("2 - Add Destinations");
+            Console.WriteLine("3 - Delete Destinations");
+            Console.WriteLine("4 - Back");
+            Console.WriteLine("");
+            Console.WriteLine("Selection: ");
+        }
+
+        public void DisplayMenu_Manifest()
+        {
+            WelcomeMessage();
+
+            Console.WriteLine("Manifest Menu");
+            Console.WriteLine("");
+            Console.WriteLine("Please make your selection");
+            Console.WriteLine("1 - Show Manifests");
+            Console.WriteLine("2 - Add Manifests");
+            Console.WriteLine("3 - Delete Manifests");
+            Console.WriteLine("4 - Back");
+            Console.WriteLine("");
+            Console.WriteLine("Selection: ");
+        }
+
+        public void DisplayMenu_Seat()
+        {
+            WelcomeMessage();
+
+            Console.WriteLine("Seat Menu");
+            Console.WriteLine("");
+            Console.WriteLine("Please make your selection");
+            Console.WriteLine("1 - Show Seat Assignments for all Passengers");
+            Console.WriteLine("2 - Show Passengers lacking Seats");
+            Console.WriteLine("3 - Assign a Seat");
+            Console.WriteLine("4 - Delete Seat Assignment");
+            Console.WriteLine("5 - Back");
+            Console.WriteLine("");
+            Console.WriteLine("Selection: ");
+        }
+
+        public void DisplayMenu_Flight()
+        {
+            WelcomeMessage();
+
+            Console.WriteLine("Flight Menu");
+            Console.WriteLine("");
+            Console.WriteLine("Please make your selection");
+            Console.WriteLine("1 - Show Flights");
+            Console.WriteLine("2 - Add Flights");
+            Console.WriteLine("3 - Delete Flights");
+            Console.WriteLine("4 - Back");
+            Console.WriteLine("");
+            Console.WriteLine("Selection: ");
+        }
+
+        public void DisplayMenu_Passenger()
+        {
+            WelcomeMessage();
+
+            Console.WriteLine("Passenger Menu");
+            Console.WriteLine("");
+            Console.WriteLine("Please make your selection");
+            Console.WriteLine("1 - Show Passengers");
+            Console.WriteLine("2 - Add Passengers");
+            Console.WriteLine("3 - Delete Passengers");
+            Console.WriteLine("4 - Back");
+            Console.WriteLine("");
+            Console.WriteLine("Selection: ");
+        }
+
+        public void DisplayMenu_ResetData()
+        {
+            WelcomeMessage();
+
+            Console.WriteLine("Reset Data Menu");
+            Console.WriteLine("");
+            Console.WriteLine("Please make your selection");
+            Console.WriteLine("1 - Reset Data");
+            Console.WriteLine("2 - Back");
+            Console.WriteLine("");
+            Console.WriteLine("Selection: ");
+        }
+
+        public void DisplayMenu_Main()
+        {
+            int choice = 0;
+            do
+            {
+                Console.Clear();
+                DisplayMenu_Options();
+                choice = GetInputKey();
+                switch (choice)
+                {
+                    case 1:
+                        Menu_Destination();
+                        break;
+                    case 2:
+                        Menu_Passenger();
+                        break;
+                    case 3:
+                        Menu_Flight();
+                        break;
+                    case 4:
+                        Menu_Manifest();
+                        break;
+                    case 5:
+                        Menu_Seat();
+                        break;
+
+                    case 6:
+                        Menu_ResetData();
+                        break;
+
+                    case 7:
+                        Console.WriteLine("");
+                        Console.WriteLine("Thank you for Flying Mike Airlines");
+                        Console.WriteLine("");
+                        break;
+
+                    default:
+                        break;
+                }
+
+            } while (choice != 7);
+            return;
+        }
+        #endregion MenuDisplay
+    }
+
+    #region MainProgram
+    class Program
+    {
+        #region MainLoop
+        static void Main(string[] args)
+        {
+            var airlines = new Airlines();
+            airlines.DisplayMenu_Main();
+            return;
+        }
+        #endregion MainLoop    
+    }
+    #endregion MainProgram
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------
 GO
 USE mk_st19
 GO
