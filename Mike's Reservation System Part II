@@ -1,0 +1,458 @@
+-- 1 Use your database
+USE mk_st19
+GO
+
+
+
+-- 2 Delete Data from Database (not drop), make sure to Delete so foreign keys references are deleted first (just like drop sequences...)
+--Delete from manifest
+DROP TABLE IF EXISTS HISTORY
+DROP TABLE IF EXISTS ACTION_TYPE
+DELETE FROM MANIFEST	
+
+-- Delete from flight
+DELETE FROM FLIGHT	
+
+-- Delete from plane 
+DELETE FROM PLANE
+
+--Delete from passenger	
+DELETE FROM PASSENGER	
+
+--Delete from Destination
+DELETE FROM DESTINATION	
+
+
+
+
+
+-- 3. Insert Data into your tables, using the approach from last lab
+-- Initialize PLANE Data from Mike's Database Views of the same name
+DELETE FROM PLANE	-- Delete the existing data
+SET IDENTITY_INSERT PLANE ON -- Turn off Identity numbering (the switch is opposite)
+INSERT INTO PLANE(PLANE_ID, PLANE_MODEL, PLANE_ROWS, PLANE_COLUMNS) SELECT PLANE_ID, PLANE_MODEL, PLANE_ROWS, PLANE_COLUMNS FROM mk_koenig.DBO.VIEW_PLANE;	
+SET IDENTITY_INSERT PLANE OFF -- Turn on the Identity Numbering
+
+
+-- Initialize PASSENGER Data from Mike's Database Views of the same name
+DELETE FROM PASSENGER	-- Delete the existing data
+SET IDENTITY_INSERT PASSENGER ON -- Turn off Identity numbering (the switch is opposite)
+INSERT INTO PASSENGER(PASSENGER_ID, PASSENGER_NAME) SELECT PASSENGER_ID, PASSENGER_NAME FROM mk_koenig.DBO.VIEW_PASSENGER;	
+SET IDENTITY_INSERT PASSENGER OFF -- Turn on the Identity Numbering
+
+--Initialize DESTINATION Data from Mike's Database Views of the same name
+DELETE FROM DESTINATION	-- Delete the existing data
+SET IDENTITY_INSERT DESTINATION ON -- Turn off Identity numbering (the switch is opposite)
+INSERT INTO DESTINATION(DESTINATION_ID, DESTINATION_CODE) SELECT DESTINATION_ID, DESTINATION_CODE FROM mk_koenig.DBO.VIEW_DESTINATION;	
+SET IDENTITY_INSERT DESTINATION OFF -- Turn on the Identity Numbering
+
+--Initialize FLIGHT Data from Mike's Database Views of the same name
+DELETE FROM FLIGHT	-- Delete the existing data
+SET IDENTITY_INSERT FLIGHT ON -- Turn off Identity numbering (the switch is opposite)
+INSERT INTO FLIGHT(FLIGHT_ID, PLANE_ID, DESTINATION_ID, FLIGHT_DATE) SELECT FLIGHT_ID, PLANE_ID, DESTINATION_ID, FLIGHT_DATE FROM mk_koenig.DBO.VIEW_FLIGHT;	
+SET IDENTITY_INSERT FLIGHT OFF -- Turn on the Identity Numbering
+
+--Initialize MANIFEST Data from Mike's Database Views of the same name
+DELETE FROM MANIFEST	-- Delete the existing data
+INSERT INTO MANIFEST(PASSENGER_ID,FLIGHT_ID,MANIFEST_ROWS,MANIFEST_COLUMNS ) SELECT PASSENGER_ID,FLIGHT_ID,MANIFEST_ROW,MANIFEST_COLUMN FROM mk_koenig.DBO.VIEW_MANIFEST;	
+
+
+-- 4 Drop and Create, and Insert an ACTION_TYPE table with ACTION_TYPE Name of 'Add', 'Change'
+
+DROP TABLE IF EXISTS ACTION_TYPE
+
+CREATE TABLE ACTION_TYPE(
+ACTION_TYPE_ID INT NOT NULL IDENTITY(1,1)  PRIMARY KEY,
+ACTION_TYPE_NAME VARCHAR(25)
+)
+ 
+ INSERT INTO ACTION_TYPE (ACTION_TYPE_NAME)  VALUES 
+ ('Change'), ('Add')
+
+
+
+-- 5a Drop and Create a HISTORY table  (HISTORY_DATE, PASSENGER_ID, FLIGHT_ID, ACTION_TYPE_ACTION_TYPE_ID, HISTORY_MANIFEST_ROW, HISTORY_MANIFEST_COLUMN)
+DROP TABLE IF EXISTS HISTORY
+
+CREATE TABLE HISTORY(
+HISTORY_DATE DATE NOT NULL ,
+PASSENGER_ID INT FOREIGN KEY REFERENCES PASSENGER (PASSENGER_ID),
+FLIGHT_ID INT FOREIGN KEY REFERENCES FLIGHT (FLIGHT_ID),
+ACTION_TYPE_ID INT FOREIGN KEY REFERENCES ACTION_TYPE (ACTION_TYPE_ID),
+HISTORY_MANIFEST_ROW INT ,
+HISTORY_MANIFEST_COLUMN INT ,
+PRIMARY KEY(HISTORY_DATE, PASSENGER_ID, FLIGHT_ID, ACTION_TYPE_ID)
+
+)
+
+
+-- 5b Drop and Create a View called VIEW_PASSENGERS_ALL that shows for every item in Manifest the Fight, 
+--Flight Date, Destination Code, Passenger Name, Seat Row and Column
+
+DROP VIEW IF EXISTS VIEW_PASSENGERS_ALL
+GO
+CREATE VIEW VIEW_PASSENGERS_ALL AS
+SELECT FLIGHT_DATE, DESTINATION_CODE,PASSENGER_NAME, MANIFEST_ROWS,MANIFEST_COLUMNS FROM MANIFEST
+JOIN FLIGHT ON FLIGHT.FLIGHT_ID = MANIFEST.FLIGHT_ID
+JOIN DESTINATION ON DESTINATION.DESTINATION_ID = FLIGHT.DESTINATION_ID
+JOIN PASSENGER ON PASSENGER.PASSENGER_ID = MANIFEST.PASSENGER_ID
+WHERE MANIFEST_COLUMNS IS NOT NULL AND MANIFEST_ROWS IS NOT NULL
+GO
+
+
+
+-- 6 Drop and Create a Procedure called SP_ASSIGN SEAT that takes a Flight ID, Passenger Name, Seat Row and Column and 
+--Updates the passenger seat row and number
+DROP PROCEDURE IF EXISTS SP_ASSIGN_SEAT
+GO
+
+CREATE PROCEDURE SP_ASSIGN_SEAT @FLIGHT_ID INT , @PASSENGER_NAME VARCHAR(25), @MANIFEST_ROW INT,
+@MANIFEST_COLUMN INT
+AS 
+BEGIN
+UPDATE MANIFEST
+SET MANIFEST_ROWS = @MANIFEST_ROW, MANIFEST_COLUMNS = @MANIFEST_COLUMN
+FROM MANIFEST
+JOIN FLIGHT ON FLIGHT.FLIGHT_ID = MANIFEST.FLIGHT_ID
+JOIN PASSENGER ON PASSENGER.PASSENGER_ID = MANIFEST.PASSENGER_ID
+WHERE FLIGHT.FLIGHT_ID = @FLIGHT_ID AND PASSENGER_NAME = @PASSENGER_NAME
+SELECT FLIGHT_ID, PASSENGER_ID,MANIFEST_ROWS,MANIFEST_COLUMNS
+FROM MANIFEST
+END
+GO
+
+ 
+-- 7 Drop and Create a procedure called SP_ADD_PASSENGER_TO_FLIGHT that takes a Flight ID and a Passenger Name 
+--and adds them to the flight with no assigned seat.  It should not add someone who is already on the flight 
+--(the passenger is in the manifest), see the long hint to work out how to do this.  I recommend writing the 
+--standard insert statement, then finishing the rest of the lab, then reading the long hint, and returning to 
+--7 to refactor it to address the aspect of not inserting when someone is already on the flight
+
+DROP PROCEDURE IF EXISTS SP_ADD_PASSENGER_TO_FLIGHT
+GO
+CREATE PROCEDURE SP_ADD_PASSENGER_TO_FLIGHT @FLIGHT_ID INT, @PASSENGER_NAME VARCHAR(25)
+AS 
+BEGIN
+DECLARE @PASSENGER_ID INT 
+SET @PASSENGER_ID = (SELECT PASSENGER.PASSENGER_ID FROM PASSENGER
+WHERE PASSENGER.PASSENGER_NAME = @PASSENGER_NAME)
+
+IF NOT EXISTS (SELECT * FROM MANIFEST 
+JOIN PASSENGER ON MANIFEST.PASSENGER_ID = PASSENGER.PASSENGER_ID
+WHERE PASSENGER_NAME = @PASSENGER_NAME AND MANIFEST.FLIGHT_ID = @FLIGHT_ID)
+BEGIN
+INSERT INTO MANIFEST(FLIGHT_ID, PASSENGER_ID, MANIFEST_ROWS, MANIFEST_COLUMNS)
+VALUES (@FLIGHT_ID, @PASSENGER_ID, NULL, NULL)
+END
+END
+GO
+
+
+
+
+
+
+-- 8 Drop and Create a Trigger called TRIGGER_MANIFEST_HISTORY_ADD that inserts into the History Table the Manifest inserted data 
+
+DROP TRIGGER IF EXISTS TRIGGER_MANIFEST_HISTORY_ADD
+GO
+CREATE TRIGGER TRIGGER_MANIFEST_HISTORY_ADD
+ON MANIFEST
+AFTER INSERT AS 
+BEGIN
+INSERT INTO HISTORY(HISTORY_DATE, PASSENGER_ID, FLIGHT_ID, HISTORY_MANIFEST_ROW, HISTORY_MANIFEST_COLUMN, ACTION_TYPE_ID)
+SELECT GETUTCDATE(), PASSENGER_ID, FLIGHT_ID, MANIFEST_ROWS, MANIFEST_COLUMNS, ACTION_TYPE_ID
+FROM INSERTED, ACTION_TYPE
+WHERE ACTION_TYPE.ACTION_TYPE_NAME = 'Add'
+END 
+GO
+
+
+-- 9 Drop and Create a Trigger called TRIGGER_MANIFEST_HISTORY_CHANGE 
+--   that inserts into the History Table the Manifest changed data 
+
+
+DROP TRIGGER IF EXISTS TRIGGER_MANIFEST_HISTORY_CHANGE
+GO
+CREATE TRIGGER TRIGGER_MANIFEST_HISTORY_CHANGE
+ON MANIFEST
+AFTER UPDATE AS 
+BEGIN
+INSERT INTO HISTORY(HISTORY_DATE, PASSENGER_ID, FLIGHT_ID, HISTORY_MANIFEST_ROW, HISTORY_MANIFEST_COLUMN,ACTION_TYPE_ID)
+SELECT GETUTCDATE(), PASSENGER_ID, FLIGHT_ID,MANIFEST_ROWS, MANIFEST_COLUMNS, ACTION_TYPE_ID
+FROM INSERTED, ACTION_TYPE
+WHERE ACTION_TYPE.ACTION_TYPE_NAME = 'Change'
+END 
+GO
+
+
+
+
+-- 10 Drop and Create SP_GET_PASSENGER_FLIGHTS that takes a Passenger_name AND outputs a report (see the example output) 
+DROP PROCEDURE IF EXISTS SP_GET_PASSENGER_FLIGHTS
+GO
+CREATE PROCEDURE SP_GET_PASSENGER_FLIGHTS @PASSENGER_NAME VARCHAR(25)
+AS
+
+PRINT ' *************************************************************** '
+PRINT '****************Report of Passenger Flights*********************'
+
+
+DECLARE @Message varchar(100)
+DECLARE @FlightID int
+DECLARE @Plane varchar(100)
+DECLARE @Destination varchar(100)
+DECLARE @FlightDate datetime
+
+
+DECLARE MY_CURSOR1 CURSOR STATIC FOR
+SELECT DESTINATION_CODE, PLANE_MODEL, FLIGHT.FLIGHT_ID, FLIGHT_DATE
+FROM MANIFEST
+JOIN FLIGHT ON FLIGHT.FLIGHT_ID = MANIFEST.FLIGHT_ID
+JOIN PLANE ON PLANE.PLANE_ID = FLIGHT.PLANE_ID
+JOIN DESTINATION ON DESTINATION.DESTINATION_ID = FLIGHT.DESTINATION_ID
+JOIN PASSENGER ON PASSENGER.PASSENGER_ID = MANIFEST.PASSENGER_ID
+WHERE PASSENGER_NAME = @PASSENGER_NAME
+
+ORDER BY DESTINATION_CODE ASC, PLANE_MODEL ASC, FLIGHT_ID ASC
+
+OPEN MY_CURSOR1
+FETCH NEXT FROM MY_CURSOR1 INTO @Destination, @Plane, @FlightID, @FlightDate
+
+PRINT CONCAT('Passenger Name:', char(9), ' ' ,@PASSENGER_NAME)
+PRINT CONCAT('Number of Flights	:', char(9), ' ', convert(varchar, @@CURSOR_ROWS))
+PRINT(' ')
+
+PRINT	concat(
+	char(9),
+	'City',
+	char(9),
+	'Plane',
+	char(9),
+	'Flight',
+	char(9),
+	'Date'
+	)
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	SELECT @Message = concat(char(10),' ', 
+		@Destination,
+		char(9),' ', 
+		@Plane,
+		char(9),' ',
+		@FlightID,
+		char(9), ' ',
+		char(9), ' ',
+		CONVERT(varchar,@FlightDate,101),
+		char(9), ' '
+		)
+
+	PRINT @Message 
+	FETCH NEXT FROM MY_CURSOR1 INTO @Destination, @Plane, @FlightID, @FlightDate
+END
+
+
+CLOSE MY_CURSOR1
+DEALLOCATE MY_CURSOR1
+GO
+
+
+
+-- 11 Drop and Create SP_GET_FLIGHT_PASSENGERS that takes a Destination code and outputs a report (see the example output) 
+DROP PROCEDURE IF EXISTS SP_GET_FLIGHT_PASSENGERS
+GO
+CREATE PROCEDURE SP_GET_FLIGHT_PASSENGERS @DESTINATION_CODE CHAR(3)
+AS
+
+PRINT '***************************************************************'
+PRINT '***************Report of Passengers on Flight***********'
+
+
+DECLARE @Message varchar(100)
+DECLARE @FlightID int
+DECLARE @FlightDate datetime
+DECLARE @Passenger varchar(100)
+DECLARE @Row int
+DECLARE @COLUMN int
+
+
+SET @FlightID = (SELECT FLIGHT.FLIGHT_ID FROM FLIGHT
+JOIN DESTINATION ON DESTINATION.DESTINATION_ID = FLIGHT.DESTINATION_ID
+WHERE DESTINATION_CODE = @DESTINATION_CODE)
+
+SET @FlightDate = (SELECT FLIGHT.FLIGHT_DATE FROM FLIGHT
+JOIN DESTINATION ON DESTINATION.DESTINATION_ID = FLIGHT.DESTINATION_ID
+WHERE DESTINATION_CODE = @DESTINATION_CODE
+)
+
+DECLARE MY_CURSOR2 CURSOR STATIC FOR
+SELECT PASSENGER_NAME, MANIFEST_ROWS, MANIFEST_COLUMNS
+FROM MANIFEST
+JOIN PASSENGER ON PASSENGER.PASSENGER_ID = MANIFEST.PASSENGER_ID
+JOIN FLIGHT ON FLIGHT.FLIGHT_ID = MANIFEST.FLIGHT_ID
+JOIN DESTINATION ON DESTINATION.DESTINATION_ID = FLIGHT.DESTINATION_ID
+WHERE DESTINATION_CODE = @DESTINATION_CODE
+
+ORDER BY PASSENGER_NAME ASC
+
+OPEN MY_CURSOR2
+FETCH NEXT FROM MY_CURSOR2 INTO @Passenger, @Row, @COLUMN
+
+PRINT CONCAT('Flight Number:', char(9), ' ' , CONVERT(VARCHAR,@FlightID))
+PRINT CONCAT('Flight Date:', char(9), ' ', convert(varchar, @FlightDate, 101))
+PRINT CONCAT('Destination City:', char(9), ' ', @DESTINATION_CODE)
+PRINT CONCAT('Number of Passengers:', char(9), ' ', convert(varchar, @@CURSOR_ROWS))
+
+
+
+PRINT	concat(
+	char(9),
+	'Name',
+	char(9),
+	'Row',
+	char(9),
+	'Column'
+	)
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	SELECT @Message = concat(char(9),' ', 
+		@Passenger,
+		char(9),' ', 
+		@Row,
+		char(9),' ',
+		@COLUMN,
+		char(9), ' ',
+		char(9), ' '
+		)
+
+	PRINT @Message 
+	FETCH NEXT FROM MY_CURSOR2 INTO @Passenger, @Row, @COLUMN
+END
+
+PRINT ' '
+CLOSE MY_CURSOR2
+DEALLOCATE MY_CURSOR2
+GO
+
+
+-- 12 Drop and Create SP_GET_PASSENGER_HISTORY that a passenger name and shows their history report (see the example output) 
+DROP PROCEDURE IF EXISTS SP_GET_PASSENGER_HISTORY
+GO
+CREATE PROCEDURE SP_GET_PASSENGER_HISTORY @PASSENGER_NAME VARCHAR(25)
+AS
+
+PRINT ' ***********************************************************************'
+PRINT '********************Passenger History************************************'
+PRINT '																			'
+
+DECLARE @Message varchar(100)
+DECLARE @FlightID int
+DECLARE @Destination varchar(100)
+DECLARE @FlightDate datetime
+DECLARE @Row int
+DECLARE @COLUMN int
+DECLARE @ActionType int
+
+DECLARE MY_CURSOR3 CURSOR STATIC FOR
+SELECT HISTORY_DATE, HISTORY.FLIGHT_ID, DESTINATION.DESTINATION_CODE, HISTORY_MANIFEST_ROW, HISTORY_MANIFEST_COLUMN, HISTORY.ACTION_TYPE_ID
+FROM HISTORY
+JOIN PASSENGER ON PASSENGER.PASSENGER_ID = HISTORY.PASSENGER_ID
+JOIN FLIGHT ON FLIGHT.FLIGHT_ID = HISTORY.FLIGHT_ID
+JOIN DESTINATION ON DESTINATION.DESTINATION_ID = FLIGHT.DESTINATION_ID
+JOIN ACTION_TYPE ON ACTION_TYPE.ACTION_TYPE_ID = HISTORY.ACTION_TYPE_ID
+WHERE PASSENGER_NAME = @PASSENGER_NAME
+
+ORDER BY DESTINATION_CODE ASC
+
+OPEN MY_CURSOR3
+FETCH NEXT FROM MY_CURSOR3 INTO @FlightDate, @FlightID, @Destination, @Row, @COLUMN, @ActionType 
+
+PRINT CONCAT('Passenger Name:', char(9), ' ' , @PASSENGER_NAME )
+PRINT CONCAT('Number of Entries:', char(9), ' ', convert(varchar,@@cursor_rows))
+print(' ')
+
+PRINT	concat(
+	char(9),
+	'Date',
+	char(9),
+	char(9),
+	char(9),
+	'Flight',
+	char(9),
+	char(9),
+	'CODE',
+	char(9),
+	'Row',
+	char(9),
+	char(9),
+	'Column',
+	char(9),
+	'Action'
+	)
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	SELECT @Message = concat(char(9), 
+		CONVERT(VARCHAR, @FlightDate, 101),
+		char(9),' ', 
+		char(9),' ', 
+		@FlightID,
+		char(9),' ',
+		char(9), ' ',
+		char(9),' ', 
+		@Destination,
+		char(9), ' ',
+		@Row,
+		char(9), ' ',
+		char(9), ' ',
+		@COLUMN,
+		char(9), ' ',
+		char(9), ' ',
+		@ActionType
+		)
+
+	PRINT @Message 
+	FETCH NEXT FROM MY_CURSOR3 INTO @FlightDate, @FlightID, @Destination, @Row, @COLUMN, @ActionType
+END
+
+PRINT ' '
+CLOSE MY_CURSOR3
+DEALLOCATE MY_CURSOR3
+GO
+
+
+
+-- 13 Using a procedure assign Mike a Seat 3,2 on flight 1 
+EXEC SP_ASSIGN_SEAT 1, 'Mike', 3, 2
+
+
+-- 14 Using a procedure Assign Doug a seat 10, 1 on flight 1
+EXEC SP_ASSIGN_SEAT 1, 'Doug', 10, 1
+
+-- 15 Using a procedure Add Jea to Flight 1 
+exec SP_ADD_PASSENGER_TO_FLIGHT 1, 'Jea'
+
+-- 16 Using a procedure Add Mike to Flight 1, but he is already there...  Should not error
+exec SP_ADD_PASSENGER_TO_FLIGHT 1, 'Mike'
+
+-- 17 Using a procedure Add Mike to Flight 2 
+exec SP_ADD_PASSENGER_TO_FLIGHT 2, 'Mike'
+
+-- 18 Using a procedure Add Doug to Flight 2
+exec SP_ADD_PASSENGER_TO_FLIGHT 2, 'Doug'
+
+
+-- 19 Using a procedure Get the Passengers who go to SEA
+ EXEC SP_GET_FLIGHT_PASSENGERS 'SEA'
+ 
+ -- 20 Using a procedure Get Mike's flights
+  EXEC SP_GET_PASSENGER_FLIGHTS 'Mike'
+ 
+ -- 21 Using a procedure Get Mike's Change history
+ exec SP_GET_PASSENGER_HISTORY 'Mike'
+ 
+ -- 22 Using a procedure Get Jea's Change histor
+  exec SP_GET_PASSENGER_HISTORY 'Jea'
+
